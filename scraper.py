@@ -2,16 +2,12 @@ import re
 from urllib.parse import urlparse, urldefrag
 
 
+
 visit_count = dict()
 
 def scraper(url, resp):
 
     links = extract_next_links(url, resp)
-
-    # Call getOutput() only if frontier is empty
-    if frontier_empty:
-        get_output()
-        frontier_empty = False
     
     # checks the list of urls found on a page using the is_valid function to
     # decide whether or not to return each url
@@ -49,8 +45,6 @@ def is_valid(url):
         # 1. Include a valid domain from the `validDomains` list.
         # 2. Do not include certain file extensions or paths indicating non-content URLs.
         # 3. Do not include months or mentioned of calendar in the URLs 
-        # 4. Do not match certain date or event-related patterns **REMOVED FOR TESTING**.
-        # r"|names|epub|csv|page"
         if any(domain in parsed.hostname for domain in validDomains) \
                 and not re.search(r"(css|js|bmp|gif|jpe?g|ico"
                                 r"|png|tiff?|mid|mp2|mp3|mp4"
