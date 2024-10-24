@@ -6,20 +6,11 @@ visit_count = dict()
 
 def scraper(url, resp):
 
-    # check content within a page of code 200
-    if resp.status != 200 or not resp.raw_response.content:
-        return []
-
     links = extract_next_links(url, resp)
-
-    global frontier_empty
-    
-    if not links:
-        frontier_empty = True
 
     # Call getOutput() only if frontier is empty
     if frontier_empty:
-        getOutput()
+        get_output()
         frontier_empty = False
     
     # checks the list of urls found on a page using the is_valid function to
@@ -88,7 +79,7 @@ def is_valid(url):
         print ("TypeError for ", parsed)
         raise
 
-def getOutput():
+def get_output():
     # returns the answer to all four problems 
     # TODO: need other helper function for completion
     holder = ""
