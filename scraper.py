@@ -1,5 +1,10 @@
 import re
-from urllib.parse import urlparse
+from urllib.parse import urlparse, urljoin
+import urllib.request
+from bs4 import BeautifulSoup
+import lxml
+
+
 
 def scraper(url, resp):
     links = extract_next_links(url, resp)
@@ -15,7 +20,35 @@ def extract_next_links(url, resp):
     #         resp.raw_response.url: the url, again
     #         resp.raw_response.content: the content of the page!
     # Return a list with the hyperlinks (as strings) scrapped from resp.raw_response.content
-    return list()
+    
+    hyperlinks = []
+
+    if resp.status != 200 or resp.status == 204: 
+        return []
+
+    try:
+        soup = BeautifulSoup(url, 'lxml') #parse html
+
+        for a in soup.find_all('a', href=True): #find anchor tags with href
+            href = a.get('href')
+            if not href: #ignore empty href
+                continue
+            
+            try:
+                parsed = urlparse(href) #parse href
+
+                if parsed.scheme and parsed.netloc: #check for scheme and netloc = fullURL
+                    fullURL = href
+                else:
+                    fullURL = urljoin(url,href)
+
+                if fullURL not in hyperlinks: #duplicates
+                    hyperlinks.append(fullURL)
+            except Exception:
+                continue
+    except Exception:
+        return hyperlinks
+    return hyperlinks
 
 def is_valid(url):
     # Decide whether to crawl this url or not. 
@@ -34,6 +67,7 @@ def is_valid(url):
             + r"|epub|dll|cnf|tgz|sha1"
             + r"|thmx|mso|arff|rtf|jar|csv"
             + r"|rm|smil|wmv|swf|wma|zip|rar|gz)$", parsed.path.lower())
+
 
     except TypeError:
         print ("TypeError for ", parsed)
