@@ -31,10 +31,14 @@ def extract_next_links(url, resp):
 
     try:
         soup = BeautifulSoup(url, 'lxml') #parse html
+        
+        for element in soup(['script', 'style', 'nav', 'footer', 'header']):
+            element.decompose()
 
         page_text = soup.get_text()
-        if len(page_text.strip()) < 1000: #
+        if len(page_text.strip()) < 1500: #
             return []
+
 
         for a in soup.find_all('a', href=True): #find anchor tags with href
             href = a.get('href')
