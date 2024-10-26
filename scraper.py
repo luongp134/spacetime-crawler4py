@@ -36,7 +36,12 @@ def extract_next_links(url, resp):
             element.decompose()
 
         page_text = soup.get_text()
-        if len(page_text.strip()) < 1500: #
+        if len(page_text.strip()) < 1500: #low textual information content
+            return []
+        
+        tokens = tokenize(page_text)
+
+        if len(set(tokens)) < 45: #low unique tokens
             return []
 
 
