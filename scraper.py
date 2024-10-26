@@ -1,4 +1,5 @@
 import re
+import sys
 from urllib.parse import urlparse, urljoin
 import urllib.request
 from bs4 import BeautifulSoup
@@ -25,9 +26,15 @@ def extract_next_links(url, resp):
 
     if resp.status != 200 or resp.status == 204: 
         return []
+    if not resp.raw_response.content or len(resp.raw_response.content) < 500:
+        return []
 
     try:
         soup = BeautifulSoup(url, 'lxml') #parse html
+
+        page_text = soup.get_text()
+        if len(page_text.strip()) < 1000: #
+            return []
 
         for a in soup.find_all('a', href=True): #find anchor tags with href
             href = a.get('href')
@@ -58,6 +65,15 @@ def is_valid(url):
         parsed = urlparse(url)
         if parsed.scheme not in set(["http", "https"]):
             return False
+        if re.search(r"/\d{4}/\d{2}/\d{2}/", parsed.path): #calendar/dates
+            return False
+        if re.search(r"/(search|login|logout|api|admin|raw|static)/", parsed.path.lower()): #low value path
+            return False
+        if re.search(r"/(page|p)/?\d+", parsed.path.lower()): #infinite pages
+            return False
+        if re.search(r"(sessionid|sid|session)=[\w\d]{32}", parsed.query): #sessionID / random long str.
+            return False
+        
         return not re.match(
             r".*\.(css|js|bmp|gif|jpe?g|ico"
             + r"|png|tiff?|mid|mp2|mp3|mp4"
@@ -72,3 +88,40 @@ def is_valid(url):
     except TypeError:
         print ("TypeError for ", parsed)
         raise
+
+"""
+    tokenize: 
+    reads each character from the text file one by one,
+    checks if alphanumeric, and appends valid characters to list
+
+    Time Complexity:
+    O(n), n is the number of characters
+    Iterates through each character once, so it runs linear
+"""
+def tokenize(filePath):
+    try:
+        with open(filePath, 'r', encoding="utf8") as text:
+            token = []
+            empty = ''
+            while True:
+                char = text.read(1)
+                if not char:
+                    break
+                try:
+                    if ('a' <= char <= 'z') or ('A' <= char <= 'Z') or ('0' <= char <= '9'):
+                        empty += char.lower()
+                    else:
+                        if empty:
+                            token.append(empty)
+                            empty = ''
+                except Exception as e:
+                    print(f"Error processing {char}: {e}")
+            if empty:
+                token.append(empty)
+        return token
+    except FileNotFoundError:
+        print(f"Error: File '{filePath}' not found.")
+        sys.exit(1)
+    except Exception as err:
+        print(f"An error occurred: {str(err)}")
+        sys.exit(1)
