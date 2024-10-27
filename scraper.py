@@ -5,11 +5,34 @@ import urllib.request
 from bs4 import BeautifulSoup
 import lxml
 
+
+subdomains = subdomainTrie
+from utils.subdomain import *
+
 visit_count = {}
 
 def scraper(url, resp):
+
     links = extract_next_links(url, resp)
     return [link for link in links if is_valid(link)]
+
+#After we have finished scraping everything, the way to get the subdomain counts is:
+
+# results = subdomains.subdomainCount()
+# results.sort(key=lambda x: x[0])
+
+# for subdomain, count in results:
+#     print(f"{subdomain}, {count}")
+
+
+#After we have finished scraping everything, the way to get the subdomain counts is:
+
+# results = subdomains.subdomainCount()
+# results.sort(key=lambda x: x[0])
+
+# for subdomain, count in results:
+#     print(f"{subdomain}, {count}")
+
 
 def extract_next_links(url, resp):
     # Implementation required.
@@ -68,6 +91,11 @@ def extract_next_links(url, resp):
 
 def is_valid(url):
     # Decide whether to crawl this url or not.
+
+    # Here is where you will call to add to the link. For example,
+    # subdomains.addLink(url)
+
+    # Decide whether to crawl this url or not. 
     # If you decide to crawl it, return True; otherwise return False.
     # There are already some conditions that return False.
     global visit_count
