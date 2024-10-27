@@ -10,7 +10,7 @@ from parser import convert_response_to_words, longest_page, fifty_common_words
 subdomains = subdomainTrie
 from utils.subdomain import *
 
-visit_count = {}
+visit_count = 0
 url_content_dictionary = dict()
 
 def scraper(url, resp):
@@ -41,12 +41,12 @@ def extract_next_links(url, resp):
     #         resp.raw_response.content: the content of the page!
     # Return a list with the hyperlinks (as strings) scrapped from resp.raw_response.content
     
+    global visit_count
     hyperlinks = []
 
     if resp.status != 200 or resp.status == 204: 
-        return []
-    if not resp.raw_response.content or len(resp.raw_response.content) < 500:
-        return []
+        if not resp.raw_response.content or len(resp.raw_response.content) < 500 or len(resp.raw_response.content) == 0:
+            return []
 
     try:
         soup = BeautifulSoup(resp.url, 'lxml') #parse html
@@ -82,6 +82,7 @@ def extract_next_links(url, resp):
 
                 if fullURL not in hyperlinks: #duplicates
                     hyperlinks.append(fullURL)
+                    visit_count += 1
             except Exception:
                 continue
     except Exception:
