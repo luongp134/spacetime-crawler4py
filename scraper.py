@@ -73,14 +73,6 @@ def is_valid(url):
             parsed.path.lower(), # date-like patterns
         )):
             return False
-
-        # Check visit count to avoid crawling URLs more than 3 times
-        if (
-            url_without_fragment in visit_count
-            and visit_count[url_without_fragment] >= 3
-        ):
-            return False
-
         return True
 
     except (ValueError, TypeError) as e:
