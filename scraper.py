@@ -1,17 +1,13 @@
 import re
 from urllib.parse import urlparse, urldefrag
 
-
-
 visit_count = dict()
 
-def scraper(url, resp):
 
+def scraper(url, resp):
     links = extract_next_links(url, resp)
-    
-    # checks the list of urls found on a page using the is_valid function to
-    # decide whether or not to return each url
     return [link for link in links if is_valid(link)]
+
 
 def extract_next_links(url, resp):
     # Implementation required.
@@ -25,67 +21,90 @@ def extract_next_links(url, resp):
     # Return a list with the hyperlinks (as strings) scrapped from resp.raw_response.content
     return list()
 
+
 def is_valid(url):
-    # Decide whether to crawl this url or not. 
+    # Decide whether to crawl this url or not.
     # If you decide to crawl it, return True; otherwise return False.
     # There are already some conditions that return False.
     global visit_count
-    
+
     try:
-        url_without_fragment = urldefrag(url).url # need for defragging of url
+        url_without_fragment = urldefrag(url).url  # need for defragging of url
         parsed = urlparse(url_without_fragment)
-        validDomains=[".ics.uci.edu","cs.uci.edu",".informatics.uci.edu",".stat.uci.edu"]
-        if parsed.hostname == None or parsed.netloc == None:
+        valid_domains = [
+            ".ics.uci.edu",
+            "cs.uci.edu",
+            ".informatics.uci.edu",
+            ".stat.uci.edu",
+        ]
+
+        # Preliminary checks for URL scheme, hostname, and query characters
+        if (
+            not parsed.scheme in {"http", "https"}
+            or parsed.hostname is None
+            or parsed.netloc is None
+            or "?" in url
+            or "&" in url
+        ):
             return False
-        if parsed.scheme not in set(["http", "https"]) or (url.find("?") != -1)\
-                or (url.find("&") != -1):
+
+        if not any(domain in parsed.hostname for domain in valid_domains):
             return False
-        
+
         # Exclude URLs that match the following criteria:
-        # 1. Include a valid domain from the `validDomains` list.
+        # 1. Include a valid domain from the `valid_domains` list.
         # 2. Do not include certain file extensions or paths indicating non-content URLs.
-        # 3. Do not include months or mentioned of calendar in the URLs 
-        if any(domain in parsed.hostname for domain in validDomains) \
-                and not re.search(r"(css|js|bmp|gif|jpe?g|ico"
-                                r"|png|tiff?|mid|mp2|mp3|mp4"
-                                r"|wav|avi|mov|mpeg|ram|m4v|mkv|ogg|ogv|pdf"
-                                r"|ps|eps|tex|ppt|pptx|doc|docx|xls|xlsx"
-                                r"|data|dat|exe|bz2|tar|msi|bin|7z|psd|dmg|iso"
-                                r"|dll|cnf|tgz|sha1|php|z|odc|calendar|archive"
-                                r"|thmx|mso|arff|rtf|jar|docs|bib|events|event|date"
-                                r"|rm|smil|wmv|swf|wma|zip|rar|gz)",
-                                parsed.path.lower())\
-                and not re.match(r'\/(19|20)[0-9]{2}/|\/(19|20)[0-9]{2}$|\/(19|20)'
-                                r'[0-9]{2}-[0-9]{1,2}|\/[0-9]{1,2}-(19|20)[0-9]{2}|'
-                                r'[0-9]{1,2}-[0-9]{1,2}-(19|20)[0-9]{2}'
-                                r'/\d{4}-\d{2}-\d{2}/', parsed.path.lower()):
-
-            if url_without_fragment in visit_count and visit_count[url_without_fragment] >= 3:
-                return False  # Do not crawl if already visited more than 3 times
-        else:
+        # 3. Patterns to exclude low-value paths, infinite pages
+        if (
+            re.search(
+                r"/(search|login|logout|api|admin|raw|static)/", parsed.path.lower()
+            ) # low-value path
+            or re.search(r"/(page|p)/?\d+", parsed.path.lower())  # infinite pages
+            or re.search(r"(sessionid|sid|session)=[\w\d]{32}", parsed.query) # sessionID or random long string
+            or re.match(
+                r".*\.(css|js|bmp|gif|jpe?g|ico|png|tiff?|mid|mp2|mp3|mp4"
+                r"|wav|avi|mov|mpeg|ram|m4v|mkv|ogg|ogv|pdf|ps|eps|tex|ppt|pptx|doc|docx|xls|xlsx"
+                r"|data|dat|exe|bz2|tar|msi|bin|7z|psd|dmg|iso|epub|dll|cnf|tgz|sha1"
+                r"|thmx|mso|arff|rtf|jar|csv|rm|smil|wmv|swf|wma|zip|rar|gz)$",
+                parsed.path.lower(), # end with a specific non-useful set of file extensions
+            )
+            or re.search(
+            r"/\d{4}/\d{2}/\d{2}/|/\d{4}-\d{2}-\d{2}/|\/(19|20)[0-9]{2}/|\/(19|20)[0-9]{2}$|\/(19|20)[0-9]{2}-[0-9]{1,2}",
+            parsed.path.lower(), # date-like patterns
+        )):
             return False
 
-    except ValueError as e:
-        print(f'Error validating IP address for URL: {url}. Error: {e}')
+        # Check visit count to avoid crawling URLs more than 3 times
+        if (
+            url_without_fragment in visit_count
+            and visit_count[url_without_fragment] >= 3
+        ):
+            return False
+
+        return True
+
+    except (ValueError, TypeError) as e:
+        print(f"Error for URL {url}: {e}")
         return False
 
-    except TypeError:
-        print ("TypeError for ", parsed)
-        raise
 
 def get_output():
-    # returns the answer to all four problems 
+    # returns the answer to all four problems
     # TODO: need other helper function for completion
     holder = ""
-    
+
     # Question 1: Number of unique pages found
     holder += f"1. Number of unique pages found: <<helper function>>"
 
     # Question 2: Longest page in terms of number of words
-    holder += f"2. Longest page: <<helper function>> with <<helper function>> words total\n\n"
+    holder += (
+        f"2. Longest page: <<helper function>> with <<helper function>> words total\n\n"
+    )
 
     # Question 3: 50 most common words
-    holder += "3. 50 most common words in order of most frequent to least frequent are:\n"
+    holder += (
+        "3. 50 most common words in order of most frequent to least frequent are:\n"
+    )
 
     # Question 4: Subdomains found and total number of subdomains
 
