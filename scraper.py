@@ -10,11 +10,25 @@ from urllib.parse import urlparse
 from utils.subdomain import *
 
 subdomains = subdomainTrie
+from urllib.parse import urlparse
+from utils.subdomain import *
+
+subdomains = subdomainTrie
 
 def scraper(url, resp):
 
+
     links = extract_next_links(url, resp)
     return [link for link in links if is_valid(link)]
+
+#After we have finished scraping everything, the way to get the subdomain counts is:
+
+# results = subdomains.subdomainCount()
+# results.sort(key=lambda x: x[0])
+
+# for subdomain, count in results:
+#     print(f"{subdomain}, {count}")
+
 
 #After we have finished scraping everything, the way to get the subdomain counts is:
 
