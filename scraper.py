@@ -4,12 +4,14 @@ from urllib.parse import urlparse, urljoin, urldefrag
 import urllib.request
 from bs4 import BeautifulSoup
 import lxml
+from parser import convert_response_to_words, longest_page, fifty_common_words
 
 
 subdomains = subdomainTrie
 from utils.subdomain import *
 
 visit_count = {}
+url_content_dictionary = dict()
 
 def scraper(url, resp):
 
@@ -53,21 +55,24 @@ def extract_next_links(url, resp):
         return []
 
     try:
-        soup = BeautifulSoup(url, 'lxml') #parse html
+        soup = BeautifulSoup(resp.url, 'lxml') #parse html
         
         for element in soup(['script', 'style', 'nav', 'footer', 'header']):
             element.decompose()
 
         page_text = soup.get_text()
-        if len(page_text.strip()) < 1500: #low textual information content
-            return []
+        # if len(page_text.strip()) < 1500: #low textual information content
+        #     return []
         
-        tokens = tokenize(page_text)
+        # tokens = tokenize(page_text)
 
-        if len(set(tokens)) < 45: #low unique tokens
-            return []
+        # if len(set(tokens)) < 45: #low unique tokens
+        #     return []
 
+        #store content in dictionary for each url
+        url_content_dictionary[resp.url] = convert_response_to_words(resp.raw_response.content)
 
+        #URL code
         for a in soup.find_all('a', href=True): #find anchor tags with href
             href = a.get('href')
             if not href: #ignore empty href
@@ -160,15 +165,25 @@ def get_output():
     # Question 1: Number of unique pages found
     holder += f"1. Number of unique pages found: <<helper function>>"
 
+    result = longest_page(url_content_dictionary)
     # Question 2: Longest page in terms of number of words
     holder += (
-        f"2. Longest page: <<helper function>> with <<helper function>> words total\n\n"
+        f"2. Longest page: {result[0]} with {result[1]} words total\n\n"
     )
 
     # Question 3: 50 most common words
     holder += (
         "3. 50 most common words in order of most frequent to least frequent are:\n"
     )
+    url_tuple = fifty_common_words(url_content_dictionary)
+    frequency_list = ""
+    for i in range(len(url_tuple)):
+        if i == len(url_tuple) - 1:
+            frequency_list = frequency_list + url_tuple[i][0] + " -> " + str(url_tuple[i][1])
+        else:
+            frequency_list = frequency_list + url_tuple[i][0] + " -> " + str(url_tuple[i][1]) + ", "
+        
+    holder += frequency_list
 
     # Question 4: Subdomains found and total number of subdomains
 
@@ -177,40 +192,3 @@ def get_output():
         file.write(holder)
 
     print("Result has been written to result.txt file.")
-
-"""
-    tokenize: 
-    reads each character from the text file one by one,
-    checks if alphanumeric, and appends valid characters to list
-
-    Time Complexity:
-    O(n), n is the number of characters
-    Iterates through each character once, so it runs linear
-"""
-def tokenize(filePath):
-    try:
-        with open(filePath, 'r', encoding="utf8") as text:
-            token = []
-            empty = ''
-            while True:
-                char = text.read(1)
-                if not char:
-                    break
-                try:
-                    if ('a' <= char <= 'z') or ('A' <= char <= 'Z') or ('0' <= char <= '9'):
-                        empty += char.lower()
-                    else:
-                        if empty:
-                            token.append(empty)
-                            empty = ''
-                except Exception as e:
-                    print(f"Error processing {char}: {e}")
-            if empty:
-                token.append(empty)
-        return token
-    except FileNotFoundError:
-        print(f"Error: File '{filePath}' not found.")
-        sys.exit(1)
-    except Exception as err:
-        print(f"An error occurred: {str(err)}")
-        sys.exit(1)

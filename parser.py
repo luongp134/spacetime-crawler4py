@@ -88,7 +88,7 @@ def longest_page(converted_dictionary) -> tuple:
     
     return (longest_page, longest_length)
 
-def fifty_common_words(converted_dictionary) -> tuple:
+def fifty_common_words(converted_dictionary) -> list:
     #return 50 most common words in url dictionary where key is url string and dictionary is the words in that page
     '''
     What are the 50 most common words in the entire set of pages crawled under these domains ? (Ignore English stop words, which can be found, for example, here
