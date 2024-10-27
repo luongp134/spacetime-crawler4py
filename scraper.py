@@ -1,11 +1,11 @@
 import re
 import sys
-from urllib.parse import urlparse, urljoin
+from urllib.parse import urlparse, urljoin, urldefrag
 import urllib.request
 from bs4 import BeautifulSoup
 import lxml
 
-
+visit_count = {}
 
 def scraper(url, resp):
     links = extract_next_links(url, resp)
