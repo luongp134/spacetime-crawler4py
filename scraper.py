@@ -1,22 +1,17 @@
 import re
 import sys
-from urllib.parse import urlparse, urljoin
+from urllib.parse import urlparse, urljoin, urldefrag
 import urllib.request
 from bs4 import BeautifulSoup
 import lxml
 
 
-from urllib.parse import urlparse
+subdomains = subdomainTrie
 from utils.subdomain import *
 
-subdomains = subdomainTrie
-from urllib.parse import urlparse
-from utils.subdomain import *
-
-subdomains = subdomainTrie
+visit_count = {}
 
 def scraper(url, resp):
-
 
     links = extract_next_links(url, resp)
     return [link for link in links if is_valid(link)]
