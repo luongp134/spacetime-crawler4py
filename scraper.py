@@ -14,9 +14,13 @@ visit_count = {}
 url_content_dictionary = dict()
 
 def scraper(url, resp):
-
     links = extract_next_links(url, resp)
-    return [link for link in links if is_valid(link)]
+    validLinks = []
+    for link in links:
+        if is_valid(link) and not (subdomains.checkIfVisited()):
+            subdomains.addLink(link)
+            validLinks.append(link)
+    return validLinks
 
 #After we have finished scraping everything, the way to get the subdomain counts is:
 
@@ -25,16 +29,6 @@ def scraper(url, resp):
 
 # for subdomain, count in results:
 #     print(f"{subdomain}, {count}")
-
-
-#After we have finished scraping everything, the way to get the subdomain counts is:
-
-# results = subdomains.subdomainCount()
-# results.sort(key=lambda x: x[0])
-
-# for subdomain, count in results:
-#     print(f"{subdomain}, {count}")
-
 
 def extract_next_links(url, resp):
     # Implementation required.
@@ -162,8 +156,10 @@ def get_output():
     # TODO: need other helper function for completion
     holder = ""
 
+    subdomainCount = subdomains.subdomainCount()
+
     # Question 1: Number of unique pages found
-    holder += f"1. Number of unique pages found: <<helper function>>"
+    holder += f"1. Number of unique pages found: {len(subdomainCount)}"
 
     result = longest_page(url_content_dictionary)
     # Question 2: Longest page in terms of number of words
@@ -186,6 +182,15 @@ def get_output():
     holder += frequency_list
 
     # Question 4: Subdomains found and total number of subdomains
+
+    holder += (
+        "4. The list of all subdomains are: \n" 
+    )
+
+    subdomainCount.sort(key=lambda x: x[0])
+
+    for subdomain, count in results:
+        holder += f"{subdomain} has {count} unique subdomains"
 
     # Write holder to a text file
     with open("result.txt", "w") as file:

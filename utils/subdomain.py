@@ -16,7 +16,8 @@ class subdomainTrie:
         # Split the subdomains 
         # a.ics.uci.edu -> [a, ics, uci, edu]
         # then i start at uci and work backwards
-        subdomains = link.split('.')[::-1]
+        preFragmentation = link.split('/')
+        subdomains = preFragmentation[2].split('.')[::-1]
         current = self.root
 
         for subdomain in subdomains:
@@ -43,19 +44,33 @@ class subdomainTrie:
             self.subdomainCount(children, entireDomain, results)
 
         return results  # Return the collected results
-
-
-#This is an example implementation
+    
+    def checkIfVisited(self, link):
+        preFragmentation = link.split('/')
+        subdomains = preFragmentation[2].split('.')[::-1]
+        current = self.root
+        for subdomain in subdomains:
+            if subdomain in current.children:
+                current = current.children[subdomain]
+            else:
+                return True
+        return False
+        
 
 # trie = subdomainTrie()
-# trie.addLink("a.ics.uci.edu")
-# trie.addLink("a.a.a.a.a.ics.uci.edu")
-# trie.addLink("b.ics.uci.edu")
-# trie.addLink("a.ics.uci.edu")
-# trie.addLink("b.ics.uci.edu")
-# trie.addLink("b.cs.uci.edu")
-# trie.addLink("informatics.uci.edu")
-# trie.addLink("stat.uci.edu")
+# trie.addLink("https://a.ics.uci.edu/#a")
+# trie.addLink("https://a.ics.uci.edu/#b")
+# trie.addLink("https://a.ics.uci.edu/#asdasdasd")
+# trie.addLink("https://a.a.a.a.a.ics.uci.edu")
+# trie.addLink("https://b.ics.uci.edu")
+# trie.addLink("https://a.ics.uci.edu")
+# trie.addLink("https://b.ics.uci.edu")
+# trie.addLink("https://b.cs.uci.edu")
+# trie.addLink("https://informatics.uci.edu")
+# trie.addLink("https://stat.uci.edu")
+
+# print(str(trie.checkIfVisited('https://a.ics.uci.edu/#a')) + '\n')
+# print(str(trie.checkIfVisited('https://awhdkjawhdkj.ics.uci.edu/#12736')))
 
 # results = trie.subdomainCount()
 # results.sort(key=lambda x: x[0])
