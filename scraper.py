@@ -10,6 +10,8 @@ from utils.subdomain import *
 
 # Initialize subdomain tracker
 subdomains = subdomainTrie()
+url_content_dictionary = {}
+crawled_count = 0
 
 # Paths for saving progress -- The server crashed while running, and we lost all the progress we had, so now we decided to store it into a file, so if it crashes we can just continue running it
 HYPERLINKS_FILE = "hyperlinks.pkl"
@@ -35,64 +37,66 @@ def save_progress():
         pickle.dump(url_content_dictionary, f)
 
 def scraper(url, resp):
+    global crawled_count
     links = extract_next_links(url, resp)
     validLinks = []
     for link in links:
         if is_valid(link):
             subdomains.addLink(link)
             validLinks.append(link)
-            #save what we just got because 
+            crawled_count += 1  # Increment the counter
+            
+            # Call save_progress after each valid link is processed
             save_progress()
+            
+            # Call get_output every 100 valid links crawled
+            if crawled_count % 1000 == 0:
+                get_output()
     return validLinks
 
 def extract_next_links(url, resp):
     if resp.status not in {200, 204} or len(resp.raw_response.content) < 500:
-        print("early exit out for low content count")
+        print("Early exit out for low content count")
         return []
 
+    currentLinksFound = set()  # Ensure this is initialized
+
     try:
-        soup = BeautifulSoup(resp.raw_response.content, 'lxml') #parse html
-        
+        soup = BeautifulSoup(resp.raw_response.content, 'lxml')  # Parse HTML
+
         for element in soup(['script', 'style', 'nav', 'footer', 'header']):
             element.decompose()
 
         page_text = soup.get_text()
-        # if len(page_text.strip()) < 1500: #low textual information content
-        #     return []
         
-        # tokens = tokenize(page_text)
-
-        # if len(set(tokens)) < 45: #low unique tokens
-        #     return []
-
-        #store content in dictionary for each url
+        # Store content in dictionary for each URL
         url_content_dictionary[resp.url] = convert_response_to_words(resp.raw_response.content)
 
-        #URL code
+        # URL code
         anchors = soup.find_all('a', href=True)
 
-        currentLinksFound = set()
-
-        for a in anchors: #find anchor tags with href
+        for a in anchors:  # Find anchor tags with href
             href = a.get('href')
-            if not href: #ignore empty href
+            if not href:  # Ignore empty href
                 continue
-            
-            try:
-                parsed = urlparse(href) #parse href
 
-                if parsed.scheme and parsed.netloc: #check for scheme and netloc = fullURL
+            try:
+                parsed = urlparse(href)  # Parse href
+
+                if parsed.scheme and parsed.netloc:  # Check for scheme and netloc = fullURL
                     fullURL = href
                 else:
-                    fullURL = urljoin(url,href)
+                    fullURL = urljoin(url, href)
                     fullURL = urldefrag(fullURL).url
-                if fullURL not in hyperlinks: #duplicates
+                
+                if fullURL not in hyperlinks:  # Duplicates
                     currentLinksFound.add(fullURL)
                     hyperlinks.add(fullURL)
             except Exception:
                 continue
-    except Exception:
-        return currentLinksFound
+    except Exception as e:
+        print(f"Exception occurred: {e}")
+
     return currentLinksFound
 
 def is_valid(url):
@@ -106,6 +110,16 @@ def is_valid(url):
             ".stat.uci.edu",
         ]
 
+        # Domains you want to ignore
+        ignore_domains = [
+            "gitlab.ics.uci.edu",  # Ignore GitLab links specifically
+            "cecs.uci.edu"
+        ]
+
+         # Check if the parsed hostname is valid
+        if parsed.hostname is None or parsed.netloc is None:
+            return False
+        
         if (
             not parsed.scheme in {"http", "https"}
             or parsed.hostname is None
@@ -113,6 +127,10 @@ def is_valid(url):
             or "?" in url
             or "&" in url
         ):
+            return False
+
+        # Ignore specific domains (like GitLab)
+        if parsed.hostname in ignore_domains:
             return False
 
         if not any(domain in parsed.hostname for domain in valid_domains):
@@ -157,9 +175,9 @@ def get_output():
     frequency_list = ""
     for i in range(len(url_tuple)):
         if i == len(url_tuple) - 1:
-            frequency_list = frequency_list + url_tuple[i][0] + " -> " + str(url_tuple[i][1])
+            frequency_list = frequency_list + url_tuple[i][0] + " -> " + str(url_tuple[i][1]) + " \n "
         else:
-            frequency_list = frequency_list + url_tuple[i][0] + " -> " + str(url_tuple[i][1]) + ", "
+            frequency_list = frequency_list + url_tuple[i][0] + " -> " + str(url_tuple[i][1]) + "\n"
         
     holder += frequency_list
 
