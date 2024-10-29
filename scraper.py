@@ -12,29 +12,12 @@ from utils.subdomain import *
 subdomains = subdomainTrie()
 url_content_dictionary = {}
 crawled_count = 0
+uniqueURL = set()
 
 # Paths for saving progress -- The server crashed while running, and we lost all the progress we had, so now we decided to store it into a file, so if it crashes we can just continue running it
 HYPERLINKS_FILE = "hyperlinks.pkl"
 URL_CONTENT_FILE = "url_content_dictionary.pkl"
 
-# Load previous data if available
-if os.path.exists(HYPERLINKS_FILE):
-    with open(HYPERLINKS_FILE, "rb") as f:
-        hyperlinks = pickle.load(f)
-else:
-    hyperlinks = set()
-
-if os.path.exists(URL_CONTENT_FILE):
-    with open(URL_CONTENT_FILE, "rb") as f:
-        url_content_dictionary = pickle.load(f)
-else:
-    url_content_dictionary = dict()
-
-def save_progress():
-    with open(HYPERLINKS_FILE, "wb") as f:
-        pickle.dump(hyperlinks, f)
-    with open(URL_CONTENT_FILE, "wb") as f:
-        pickle.dump(url_content_dictionary, f)
 
 def scraper(url, resp):
     global crawled_count
@@ -47,32 +30,36 @@ def scraper(url, resp):
             crawled_count += 1 
             
             # Call save_progress after each valid link is processed
-            save_progress()
+            #save_progress()
             if crawled_count % 1000 == 0:
                 get_output()
     return validLinks
 
 def extract_next_links(url, resp):
-    if resp.status not in {200, 204} or len(resp.raw_response.content) < 500:
-        print("Early exit out for low content count")
+    if resp.status not in {200, 601, 602, 608}:
+        print("Early exit out due to invalid URL status.")
+        return [] 
+    if len(resp.raw_response.content) < 500:
+        print("Early exit out due to low information value")
+        return []
+    if len(convert_response_to_words(resp.raw_response.content)) >= 100:
+        print("Early exit out due to low information content")
         return []
 
     currentLinksFound = set()  # Ensure this is initialized
+    global uniqueURL
 
     try:
         soup = BeautifulSoup(resp.raw_response.content, 'lxml')  # Parse HTML
 
         for element in soup(['script', 'style', 'nav', 'footer', 'header']):
             element.decompose()
-
-        page_text = soup.get_text()
         
         # Store content in dictionary for each URL
         url_content_dictionary[resp.url] = convert_response_to_words(resp.raw_response.content)
 
         # URL code
         anchors = soup.find_all('a', href=True)
-
         for a in anchors:  # Find anchor tags with href
             href = a.get('href')
             if not href:  # Ignore empty href
@@ -85,11 +72,10 @@ def extract_next_links(url, resp):
                     fullURL = href
                 else:
                     fullURL = urljoin(url, href)
-                    fullURL = urldefrag(fullURL).url
-                
-                if fullURL not in hyperlinks:  # Duplicates
+                    clean_url, fragment = urldefrag(fullURL)
+                    uniqueURL.add(clean_url)
+                if fullURL not in currentLinksFound:  # Duplicates
                     currentLinksFound.add(fullURL)
-                    hyperlinks.add(fullURL)
             except Exception:
                 continue
     except Exception as e:
@@ -99,13 +85,14 @@ def extract_next_links(url, resp):
 
 def is_valid(url):
     try:
-        url_without_fragment = urldefrag(url).url
-        parsed = urlparse(url_without_fragment)
+        #url_without_fragment = urldefrag(url).url
+        parsed = urlparse(url)#_without_fragment)
         valid_domains = [
             ".ics.uci.edu",
             "cs.uci.edu",
             ".informatics.uci.edu",
             ".stat.uci.edu",
+            "today.uci.edu/department/information_computer_sciences"
         ]
 
         ignore_domains = [
@@ -119,6 +106,7 @@ def is_valid(url):
             or parsed.netloc is None
             or "?" in url
             or "&" in url
+            or "#" in url
         ):
             return False
 
@@ -130,11 +118,17 @@ def is_valid(url):
         if not any(parsed.hostname.endswith(domain) for domain in valid_domains):
             return False
 
+        if ("redirect" or "#comment" or "#comments" or "#respond") in url:
+            return False
+
+        # https://support.archive-it.org/hc/en-us/articles/208332963-Modify-crawl-scope-with-a-Regular-Expression#RepeatingDirectories
+        if re.match(r"^.*?(/.+?/).*?\1.*$|^.*?/(.+?/)\2.*$", parsed.path.lower()):
+            return False 
 
         if (
             re.search(r"/(search|login|logout|api|admin|raw|static|calendar|event)/", parsed.path.lower())
             or re.search(r"/(page|p)/?\d+", parsed.path.lower())
-            or re.search(r"(sessionid|sid|session)=[\w\d]{32}", parsed.query)
+            or re.search(r"(sessionid|sid|session)=[\w\d]{32}", parsed.query())
             or re.match(
                 r".*\.(css|js|bmp|gif|jpe?g|ico|png|tiff?|mid|mp2|mp3|mp4|img"
                 r"|wav|apk|war|avi|mov|mpeg|ram|m4v|mkv|ogg|ogv|pdf|ps|eps|tex|ppt|pptx|doc|docx|xls|xlsx"
@@ -162,7 +156,7 @@ def get_output():
     subdomainCount = subdomains.subdomainCount()
 
     # Question 1: Number of unique pages found
-    holder += f"1. Number of unique pages found: {len(hyperlinks)}"
+    holder += f"1. Number of unique pages found: {len(uniqueURL)}"
 
     result = longest_page(url_content_dictionary)
     holder += f" \n2. Longest page: {result[0]} with {result[1]} words total\n\n"
