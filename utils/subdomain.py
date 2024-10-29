@@ -16,6 +16,10 @@ class subdomainTrie:
         # Split the subdomains 
         # a.ics.uci.edu -> [a, ics, uci, edu]
         # then i start at uci and work backwards
+        
+        if not any(domain in link for domain in [".ics.uci.edu", ".cs.uci.edu", ".informatics.uci.edu", ".stat.uci.edu"]):
+            return
+        
         preFragmentation = link.split('/')
         subdomains = preFragmentation[2].split('.')[::-1]
         current = self.root

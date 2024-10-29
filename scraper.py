@@ -44,12 +44,10 @@ def scraper(url, resp):
         if is_valid(link):
             subdomains.addLink(link)
             validLinks.append(link)
-            crawled_count += 1  # Increment the counter
+            crawled_count += 1 
             
             # Call save_progress after each valid link is processed
             save_progress()
-            
-            # Call get_output every 100 valid links crawled
             if crawled_count % 1000 == 0:
                 get_output()
     return validLinks
@@ -110,15 +108,10 @@ def is_valid(url):
             ".stat.uci.edu",
         ]
 
-        # Domains you want to ignore
         ignore_domains = [
-            "gitlab.ics.uci.edu",  # Ignore GitLab links specifically
-            "cecs.uci.edu"
+        "gitlab.ics.uci.edu",  # Ignore GitLab links specifically
+        "cecs.uci.edu"
         ]
-
-         # Check if the parsed hostname is valid
-        if parsed.hostname is None or parsed.netloc is None:
-            return False
         
         if (
             not parsed.scheme in {"http", "https"}
@@ -130,28 +123,32 @@ def is_valid(url):
             return False
 
         # Ignore specific domains (like GitLab)
-        if parsed.hostname in ignore_domains:
+        if any(domain in parsed.hostname for domain in ignore_domains):
             return False
 
-        if not any(domain in parsed.hostname for domain in valid_domains):
+        # Match only if the hostname ends with one of the valid domains
+        if not any(parsed.hostname.endswith(domain) for domain in valid_domains):
             return False
+
 
         if (
-            re.search(r"/(search|login|logout|api|admin|raw|static)/", parsed.path.lower())
+            re.search(r"/(search|login|logout|api|admin|raw|static|calendar|event)/", parsed.path.lower())
             or re.search(r"/(page|p)/?\d+", parsed.path.lower())
             or re.search(r"(sessionid|sid|session)=[\w\d]{32}", parsed.query)
             or re.match(
                 r".*\.(css|js|bmp|gif|jpe?g|ico|png|tiff?|mid|mp2|mp3|mp4|img"
-                r"|wav|avi|mov|mpeg|ram|m4v|mkv|ogg|ogv|pdf|ps|eps|tex|ppt|pptx|doc|docx|xls|xlsx"
+                r"|wav|apk|war|avi|mov|mpeg|ram|m4v|mkv|ogg|ogv|pdf|ps|eps|tex|ppt|pptx|doc|docx|xls|xlsx"
                 r"|data|dat|exe|bz2|tar|msi|bin|7z|psd|dmg|iso|epub|dll|cnf|tgz|sha1"
-                r"|thmx|mso|arff|rtf|jar|csv|rm|smil|wmv|swf|wma|zip|rar|gz)$",
-                parsed.path.lower(),
-            )
-            or re.search(
-                r"/\d{4}/\d{2}/\d{2}/|/\d{4}-\d{2}-\d{2}/|/(19|20)[0-9]{2}/|/(19|20)[0-9]{2}$|/(19|20)[0-9]{2}-[0-9]{1,2}",
+                r"|thmx|mso|arff|rtf|jar|csv|rm|smil|wmv|swf|wma|zip|rar|gz|mpg|)$",
                 parsed.path.lower(),
             )
         ):
+            return False
+        
+        if re.search(
+                r"/\d{4}/\d{2}/\d{2}/|/\d{4}-\d{2}-\d{2}/|/(19|20)[0-9]{2}/|/(19|20)[0-9]{2}$|/(19|20)[0-9]{2}-[0-9]{1,2}",
+                parsed.path.lower(),
+            ):
             return False
         return True
 
