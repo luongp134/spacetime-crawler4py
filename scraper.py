@@ -114,7 +114,7 @@ def is_valid(url):
         if not any(parsed.hostname.endswith(domain) for domain in valid_domains):
             return False
 
-        if ("redirect" or "#comment" or "#comments" or "#respond") in url:
+        if any(fragment in url for fragment in ["redirect", "#comment", "#comments", "#respond"]):
             return False
 
         # https://support.archive-it.org/hc/en-us/articles/208332963-Modify-crawl-scope-with-a-Regular-Expression#RepeatingDirectories
