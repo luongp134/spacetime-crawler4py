@@ -14,10 +14,6 @@ url_content_dictionary = {}
 crawled_count = 0
 uniqueURL = set()
 
-# Paths for saving progress -- The server crashed while running, and we lost all the progress we had, so now we decided to store it into a file, so if it crashes we can just continue running it
-HYPERLINKS_FILE = "hyperlinks.pkl"
-URL_CONTENT_FILE = "url_content_dictionary.pkl"
-
 
 def scraper(url, resp):
     global crawled_count
@@ -42,7 +38,7 @@ def extract_next_links(url, resp):
     if len(resp.raw_response.content) < 500:
         print("Early exit out due to low information value")
         return []
-    if len(convert_response_to_words(resp.raw_response.content)) >= 100:
+    if len(convert_response_to_words(resp.raw_response.content)) <= 100:
         print("Early exit out due to low information content")
         return []
 
