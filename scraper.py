@@ -68,7 +68,10 @@ def extract_next_links(url, resp):
                     fullURL = href
                 else:
                     fullURL = urljoin(url, href)
-                    clean_url, fragment = urldefrag(fullURL)
+                    
+                    clean_url = urldefrag(fullURL).url
+                    fragment = urldefrag(fullURL).fragment
+
                     uniqueURL.add(clean_url)
                 if fullURL not in currentLinksFound:  # Duplicates
                     currentLinksFound.add(fullURL)
@@ -124,7 +127,7 @@ def is_valid(url):
         if (
             re.search(r"/(search|login|logout|api|admin|raw|static|calendar|event)/", parsed.path.lower())
             or re.search(r"/(page|p)/?\d+", parsed.path.lower())
-            or re.search(r"(sessionid|sid|session)=[\w\d]{32}", parsed.query())
+            or re.search(r"(sessionid|sid|session)=[\w\d]{32}", parsed.query)
             or re.match(
                 r".*\.(css|js|bmp|gif|jpe?g|ico|png|tiff?|mid|mp2|mp3|mp4|img"
                 r"|wav|apk|war|avi|mov|mpeg|ram|m4v|mkv|ogg|ogv|pdf|ps|eps|tex|ppt|pptx|doc|docx|xls|xlsx"
