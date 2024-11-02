@@ -32,18 +32,23 @@ def scraper(url, resp):
     return validLinks
 
 def extract_next_links(url, resp):
-    if resp.status not in {200, 204}:
-        print("Early exit out due to invalid URL status.")
-        return [] 
-    if not resp or not resp.raw_response.content:
-        print("Early exit due to missing response content.")
+    try:
+        if not resp or not resp.raw_response.content:
+            print("Early exit due to missing response content.")
+            return []
+        if resp.status and not (200 <= resp.status < 400):
+            print("Early exit out due to invalid URL status.")
+            return [] 
+        if len(resp.raw_response.content) < 500:
+            print("Early exit out due to low information value")
+            return []
+        if len(convert_response_to_words(resp.raw_response.content)) <= 100:
+            print("Early exit out due to low information content")
+            return []
+    except Exception as e:
+        print(f"Exception occurred {e}")
         return []
-    if len(resp.raw_response.content) < 500:
-        print("Early exit out due to low information value")
-        return []
-    if len(convert_response_to_words(resp.raw_response.content)) <= 100:
-        print("Early exit out due to low information content")
-        return []
+
 
     currentLinksFound = set()  # Ensure this is initialized
     global uniqueURL
@@ -108,7 +113,6 @@ def is_valid(url):
             or parsed.netloc is None
             or "?" in url
             or "&" in url
-            or "#" in url
         ):
             return False
 
