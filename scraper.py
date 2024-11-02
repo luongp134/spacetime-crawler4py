@@ -32,9 +32,12 @@ def scraper(url, resp):
     return validLinks
 
 def extract_next_links(url, resp):
-    if resp.status not in {200, 601, 602, 608}:
+    if resp.status not in {200, 204}:
         print("Early exit out due to invalid URL status.")
         return [] 
+    if not resp.raw_response or not resp.raw_response.content:
+        print("Early exit due to missing response content.")
+        return []
     if len(resp.raw_response.content) < 500:
         print("Early exit out due to low information value")
         return []
