@@ -35,7 +35,7 @@ def extract_next_links(url, resp):
     if resp.status not in {200, 204}:
         print("Early exit out due to invalid URL status.")
         return [] 
-    if not resp.raw_response or not resp.raw_response.content:
+    if not resp or not resp.raw_response.content:
         print("Early exit due to missing response content.")
         return []
     if len(resp.raw_response.content) < 500:
