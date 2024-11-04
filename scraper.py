@@ -92,8 +92,8 @@ def extract_next_links(url, resp):
 
 def is_valid(url):
     try:
-        #url_without_fragment = urldefrag(url).url
-        parsed = urlparse(url)#_without_fragment)
+        url_without_fragment = urldefrag(url).url
+        parsed = urlparse(url_without_fragment)
         valid_domains = [
             ".ics.uci.edu",
             "cs.uci.edu",
