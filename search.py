@@ -3,7 +3,7 @@ import math
 from nltk.stem import PorterStemmer
 from nltk.corpus import stopwords
 import re
-from urllib.parse import urlparse
+from urllib.parse import urlparse, urlunparse
 import time
 from parser import tokenize
 import shelve
@@ -101,6 +101,29 @@ def cmd_search():
                     break
         else:
             break
+        
+def web_search(user_input):
+    result = AND_search(user_input, inverted_index)
+    search_results = []
+    count = 0
+    visited_urls = set()
+    for v in result:
+        url = doc_id[v]
+        parsed_url = urlparse(url)
+        # Remove file extension from the path/ removing duplicates (need testing)
+        path_without_extension = re.sub(r'\.\w+$', '', parsed_url.path)
+        normalized_url = urlunparse(parsed_url._replace(path=path_without_extension, fragment='', query=''))
+        # normalized_url = url.split('#')[0].rstrip('/')
+        if not re.search(r'\.\w+$', normalized_url) and normalized_url not in visited_urls:
+            # summary = summarize_url(normalized_url)
+            search_results.append(normalized_url)
+            # {'url':path_without_extension, 'summary': summary})
+            visited_urls.add(normalized_url)
+            count += 1
+        if count >= 10:  # Limit to top 10 unique URLs
+            break
+    return search_results
+
             
 if __name__ == "__main__":
     cmd_search()
